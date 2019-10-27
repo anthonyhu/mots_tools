@@ -41,15 +41,16 @@ def apply_mask(image, mask, color, alpha=0.5):
 
 
 def process_sequence(seq_id, tracks_folder, img_folder, output_folder, max_frames, draw_boxes=False,
-                     create_video=True):
+                     create_video=True, only_mask=False):
   print("Processing sequence", seq_id)
   os.makedirs(output_folder + "/" + seq_id, exist_ok=True)
   tracks = load_sequences(tracks_folder, [seq_id])[seq_id]
   max_frames_seq = max_frames[seq_id]
-  visualize_sequences(seq_id, tracks, max_frames_seq, img_folder, output_folder, draw_boxes, create_video)
+  visualize_sequences(seq_id, tracks, max_frames_seq, img_folder, output_folder, draw_boxes, create_video, only_mask)
 
 
-def visualize_sequences(seq_id, tracks, max_frames_seq, img_folder, output_folder, draw_boxes=False, create_video=True):
+def visualize_sequences(seq_id, tracks, max_frames_seq, img_folder, output_folder, draw_boxes=False, create_video=True,
+                        only_mask=False):
   colors = generate_colors()
   dpi = 100.0
   frames_with_annotations = [frame for frame in tracks.keys() if len(tracks[frame]) > 0]
@@ -70,6 +71,9 @@ def visualize_sequences(seq_id, tracks, max_frames_seq, img_folder, output_folde
     fig.subplots_adjust(left=0, bottom=0, right=1, top=1, wspace=None, hspace=None)
     ax = fig.subplots()
     ax.set_axis_off()
+
+    if only_mask:
+      mask = np.zeros(img.shape[:2], dtype=np.uint8)
 
     if t in tracks:
       for obj in tracks[t]:
@@ -92,16 +96,22 @@ def visualize_sequences(seq_id, tracks, max_frames_seq, img_folder, output_folde
           ax.annotate(category_name, (x + 0.5 * w, y + 0.5 * h), color=color, weight='bold',
                       fontsize=7, ha='center', va='center', alpha=1.0)
         binary_mask = rletools.decode(obj.mask)
-        apply_mask(img, binary_mask, color)
+        if only_mask and obj.class_id == 1:  # Car mask only
+          mask[binary_mask.astype(np.bool)] = 1
+        else:
+          apply_mask(img, binary_mask, color)
 
-    ax.imshow(img)
-    fig.savefig(output_folder + "/" + seq_id + "/%06d" % t + ".jpg")
-    plt.close(fig)
+    if only_mask:
+      mask = Image.fromarray(mask).convert('L')
+      mask.save(output_folder + "/" + seq_id + "/%06d" % t + ".png")
+    else:
+      ax.imshow(img)
+      fig.savefig(output_folder + "/" + seq_id + "/%06d" % t + ".jpg")
+      plt.close(fig)
   if create_video:
     os.chdir(output_folder + "/" + seq_id)
     call(["ffmpeg", "-framerate", "10", "-y", "-i", "%06d.jpg", "-c:v", "libx264", "-profile:v", "high", "-crf", "20",
           "-pix_fmt", "yuv420p", "-vf", "pad=\'width=ceil(iw/2)*2:height=ceil(ih/2)*2\'", "output.mp4"])
-
 
 def main():
   if len(sys.argv) != 5:
@@ -115,13 +125,11 @@ def main():
 
   seqmap, max_frames = load_seqmap(seqmap_filename)
   process_sequence_part = partial(process_sequence, max_frames=max_frames,
-                                  tracks_folder=tracks_folder, img_folder=img_folder, output_folder=output_folder)
+                                  tracks_folder=tracks_folder, img_folder=img_folder, output_folder=output_folder,
+                                  only_mask=True, create_video=False)
 
   with Pool(10) as pool:
     pool.map(process_sequence_part, seqmap)
-  #for seq in seqmap:
-  #  process_sequence_part(seq)
-
 
 if __name__ == "__main__":
   main()
