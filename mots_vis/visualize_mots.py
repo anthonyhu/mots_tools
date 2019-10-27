@@ -127,7 +127,11 @@ def main():
   process_sequence_part = partial(process_sequence, max_frames=max_frames,
                                   tracks_folder=tracks_folder, img_folder=img_folder, output_folder=output_folder,
                                   only_mask=True, create_video=False)
-
+  # Parameters to generate mask:
+  # ../../TrackR-CNN/forwarded/conv3d_sep2/tracking_data/
+  # /data/cvfs/ah2029/datasets/kitti/mots_192x640/images/
+  # /data/cvfs/ah2029/experiments/kitti/trackrcnn/generated_mask
+  # ../mots_eval/val.seqmap
   with Pool(10) as pool:
     pool.map(process_sequence_part, seqmap)
 
