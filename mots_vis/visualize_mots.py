@@ -130,7 +130,7 @@ def main():
   # Parameters to generate mask:
   # ../../TrackR-CNN/forwarded/conv3d_sep2/tracking_data/
   # /data/cvfs/ah2029/datasets/kitti/mots_192x640/images/
-  # /data/cvfs/ah2029/experiments/kitti/trackrcnn/generated_mask
+  # /data/cvfs/ah2029/experiments/kitti/trackrcnn/predicted_mask
   # ../mots_eval/val.seqmap
   with Pool(10) as pool:
     pool.map(process_sequence_part, seqmap)

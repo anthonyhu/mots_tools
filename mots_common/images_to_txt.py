@@ -12,7 +12,7 @@ if __name__ == "__main__":
   seqmap_filename = sys.argv[3]
 
   seqmap, _ = load_seqmap(seqmap_filename)
-  print("Loading ground truth images...")
+  print("Loading ground truth instance images...")
   gt = load_sequences(gt_img_folder, seqmap)
   print("Writing ground truth txts...")
   write_sequences(gt, gt_txt_output_folder)
