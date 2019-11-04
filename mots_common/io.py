@@ -69,6 +69,8 @@ def load_txt(path):
 
 def load_images_for_folder(path):
   files = sorted(glob.glob(os.path.join(path, "*.png")))
+  # Remove first 3 frames for seq_len=5, and last frame.
+  files = files[4:-1]
 
   objects_per_frame = {}
   for file in files:
